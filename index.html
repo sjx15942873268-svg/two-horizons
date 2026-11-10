@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TWO HORIZONS</title>
+<style>
+:root{--ivory:#e9dfc9;--line:#fff3df22;--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}html,body{margin:0;background:#060504;color:var(--ivory);font-family:var(--mono)}body{width:100vw;height:100dvh;overflow:hidden}canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:fixed;z-index:5;user-select:none;-webkit-user-select:none;transition:opacity .28s ease}.hidden-ui .hud{opacity:0;pointer-events:none}.hidden-ui #restore{opacity:.55;pointer-events:auto}
+#title{top:max(28px,env(safe-area-inset-top));left:max(32px,env(safe-area-inset-left));pointer-events:none;text-shadow:0 1px 14px #000a}
+#title small{display:block;font:600 10px/1.2 var(--mono);letter-spacing:.34em;color:#d8c8a6cc;margin-bottom:9px}
+#title h1{margin:0;font:400 clamp(34px,4vw,52px)/.92 var(--serif);letter-spacing:.045em;color:#fff2d8}
+#title p{margin:9px 0 0;font:11px/1.45 var(--mono);letter-spacing:.16em;color:#cbb99add;text-transform:uppercase}
+.topright{top:max(24px,env(safe-area-inset-top));right:max(25px,env(safe-area-inset-right));display:flex;gap:12px}
+.btn,.quiet{border:1px solid var(--line);background:#100c0835;color:#ded2ba;font:10px/1 var(--mono);letter-spacing:.14em;padding:9px 10px;border-radius:2px;cursor:pointer;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);transition:.2s}
+.btn{width:34px;height:34px;display:grid;place-items:center;padding:0}
+.btn:hover,.quiet:hover{border-color:#e8ce9a88;color:#fff0cf;background:#20170d66}
+.btn:focus-visible,.quiet:focus-visible,.scene:focus-visible{outline:1px solid #f0cf90;outline-offset:3px}
+.btn.on{color:#ffd788;border-color:#bd8b3d}.btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.4}
+.telemetry{bottom:max(24px,env(safe-area-inset-bottom));left:max(31px,env(safe-area-inset-left));font:10px/1.7 var(--mono);letter-spacing:.09em;color:#c3b59b;pointer-events:none;text-shadow:0 1px 7px #000c}
+.telemetry b{display:inline-block;min-width:56px;font-weight:400;color:#f1dfae}.telemetry span{color:#79705f}
+.selector{bottom:max(24px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:23px}
+.scene{border:0;border-bottom:1px solid transparent;background:none;color:#998b74;padding:4px 2px 7px;cursor:pointer;font:10px/1 var(--mono);letter-spacing:.18em;transition:.25s}
+.scene i{font-style:normal;font-family:var(--serif);font-size:15px;letter-spacing:.03em;margin-right:5px}
+.scene:hover{color:#f5e1b5}.scene.active{color:#fff0ca;border-bottom-color:#dfb660}
+.alt{bottom:82px;right:max(27px,env(safe-area-inset-right));width:34px;height:min(240px,32dvh);display:flex;flex-direction:column;align-items:center;color:#bcae95}
+.alt .readout{font:9px/1 var(--mono);letter-spacing:.05em;margin-bottom:8px;color:#e6d2a3}
+.rail{position:relative;flex:1;width:1px;background:#cbbb9b55;cursor:pointer;touch-action:none}
+.rail:before{content:"";position:absolute;left:-4px;top:0;bottom:0;width:9px}
+.rail:after{content:"";position:absolute;left:-4px;top:0;bottom:0;width:9px;background:repeating-linear-gradient(to bottom,#948770cc 0 1px,transparent 1px 12.5%)}
+.alt .zero{position:absolute;width:9px;height:1px;background:#948770cc;left:-4px}
+.handle{position:absolute;left:50%;width:11px;height:11px;border:1px solid #efdcae;border-radius:50%;background:#251a0c;transform:translate(-50%,50%);box-shadow:0 0 8px #000c}
+.alt .cap{font:8px/1 var(--mono);letter-spacing:.13em;margin-top:7px;color:#998a72}
+.audio{bottom:max(23px,env(safe-area-inset-bottom));right:max(25px,env(safe-area-inset-right));display:flex;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);background:#0b090655;border-radius:2px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.audio button{border:0;background:none;color:#c6b795;padding:4px;cursor:pointer;font:9px/1 var(--mono);letter-spacing:.1em;transition:.2s}
+.audio button:hover,.audio button.on{color:#ffe09a}
+.audio input[type=range]{width:64px;accent-color:#c69b52;height:3px}
+.track{width:78px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#8e826c;font-size:9px;letter-spacing:.05em}
+.audio svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.4;vertical-align:middle}
+#restore{bottom:20px;right:20px;width:7px;height:25px;border-left:1px solid #d7bf8c88;border-right:1px solid #d7bf8c88;opacity:0;pointer-events:none;cursor:pointer;transition:.25s}
+#restore:hover{opacity:.9!important}
+#boot{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:#070504;transition:opacity .8s;font:10px/1.6 var(--mono);letter-spacing:.22em;color:#a9977a;text-align:center}
+.bootgone{opacity:0;pointer-events:none}
+#boot .mark{font:400 20px/1 var(--serif);letter-spacing:.12em;color:#f0d59c;margin-bottom:12px}
+#boot small{display:block;max-width:360px;letter-spacing:.1em}.error{color:#f0a88e}
+@media(max-width:680px){#title{left:19px;top:18px}#title h1{font-size:30px}#title p{font-size:9px}.topright{right:15px;top:14px;gap:7px}.btn{width:32px;height:32px}.telemetry{left:19px;bottom:16px;font-size:8px}.telemetry b{min-width:42px}.selector{bottom:16px;gap:16px}.scene i{font-size:13px;margin-right:3px}.telemetry{bottom:50px}.alt{right:14px;bottom:132px;height:26dvh}.audio{right:13px;bottom:96px;padding:5px;gap:3px}.track{display:none}.audio input[type=range]{width:44px}}
+</style></head><body>
+<div id="boot"><div><div class="mark">TWO HORIZONS</div><div id="bootmsg">CALIBRATING ORBITAL OPTICS</div><small>Procedural environments • WebGL2</small></div></div>
+<header id="title" class="hud"><small>TWO HORIZONS</small><h1 id="sceneName">Aurum</h1><p id="sceneSub">The last farm before the event horizon</p></header>
+<nav class="topright hud" aria-label="Visual controls">
+<button class="btn on" id="autoBtn" title="Automatic camera" aria-label="Automatic camera"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+<button class="btn" id="pauseBtn" title="Pause visuals" aria-label="Pause visual animation"><svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg></button>
+<button class="btn" id="fullBtn" title="Fullscreen" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+<button class="btn" id="uiBtn" title="Hide interface" aria-label="Hide interface"><svg viewBox="0 0 24 24"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6Z"/><path d="m5 19 14-14"/></svg></button></nav>
+<div class="telemetry hud"><b>ALT <span id="altValue">1.7</span></b><b>HORIZON <span id="horValue">–</span></b><b>T <span id="timeValue">00:00:00</span></b><b>FPS <span id="fpsValue">–</span></b></div>
+<nav class="selector hud" aria-label="Scene selector"><button class="scene active" data-scene="aurum" aria-label="Aurum scene"><i>I</i>AURUM</button><button class="scene" data-scene="viola" aria-label="Viola scene"><i>II</i>VIOLA</button></nav>
+<div class="alt hud" aria-label="Camera altitude"><div class="readout" id="altReadout">1.7</div><div class="rail" id="rail" tabindex="0" role="slider" aria-label="Camera altitude" aria-valuemin="0.5" aria-valuemax="9" aria-valuenow="1.7"><div class="zero" style="top:0"></div><div class="handle" id="handle"></div></div><div class="cap">ALT</div></div>
+<div class="audio hud" aria-label="Background music"><button id="uploadBtn" class="quiet" title="Upload BGM">UPLOAD BGM</button><input id="fileInput" type="file" accept="audio/*" hidden><button id="playBtn" title="Play or pause" aria-label="Play or pause music">▶</button><button id="muteBtn" title="Mute" aria-label="Mute or unmute music">MUTE</button><input id="volume" type="range" min="0" max="100" value="35" aria-label="Volume"><button id="loopBtn" class="on" title="Loop">LOOP</button><span class="track" id="trackName">NO SIGNAL</span></div>
+<div id="restore" title="Show interface"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
+
+// HORIZON telemetry = elevation of the shadow center above the local horizontal plane, in degrees.
+// It is a virtual scene-relative visualization parameter, not a measured astronomical distance.
+const CONFIG={world:520,blackHole:new THREE.Vector3(-40,88,-300),shadow:30,diskInner:34,diskOuter:110,lens:12,exposure:1.25,transition:1.8};
+const PALETTES={aurum:{bg:[.07,.035,.018],atmo:[.23,.085,.025],plasma:[1.0,.48,.13],hi:[1,.72,.31],hot:[1,.92,.65],ground:[.065,.042,.022],fog:[.17,.065,.024]},viola:{bg:[.085,.075,.12],atmo:[.28,.24,.39],plasma:[1,.89,.67],hi:[1,.95,.83],hot:[1,.98,.9],ground:[.045,.045,.075],fog:[.13,.12,.21]}};
+const Q={low:{steps:40,pr:1.25,bloom:.75},med:{steps:64,pr:1.5,bloom:.9},high:{steps:96,pr:2,bloom:1.0}};
+const S={active:'aurum',prev:null,swapped:true,progress:1,t:0,pause:false,visual:0,auto:true,alt:1.7,targetAlt:1.7,zoom:1,targetZoom:1,yaw:0,pitch:.09,tYaw:0,tPitch:.09,parX:0,parY:0,quality:'med',fps:60,qTimer:0,booted:false,lastInput:-9};
+const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+const qs=new URLSearchParams(location.search);
+if(qs.get('scene')==='viola')S.active='viola';
+if(Q[qs.get('q')])S.quality=qs.get('q');
+if(qs.get('shot')==='1')S.shot=true;
+function bootError(msg){$('bootmsg').innerHTML=`<span class="error">${msg}</span>`;$('bootmsg').style.whiteSpace='normal'}
+function hash(x,y=0){const n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n)}
+function noise2(x,y){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);return lerp(lerp(hash(xi,yi),hash(xi+1,yi),u),lerp(hash(xi,yi+1),hash(xi+1,yi+1),u),v)}
+function fbm(x,y){let v=0,a=.5;for(let i=0;i<5;i++){v+=a*noise2(x,y);x*=2.03;y*=2.03;a*=.5}return v}
+let renderer,scene,camera,composer,bloom,finalPass,clock,skyMat,aurum,viola,current,dragging=false;
+function box(w,h,d,c){return new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:c,roughness:.92}))}
+function cyl(rt,rb,h,c,seg=12){return new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),new THREE.MeshStandardMaterial({color:c,roughness:.85}))}
+function sph(r,c,seg=16){return new THREE.Mesh(new THREE.SphereGeometry(r,seg,Math.max(8,seg-3)),new THREE.MeshStandardMaterial({color:c,roughness:.8}))}
+function place(g,x,y,z,ry=0){g.position.set(x,y,z);g.rotation.y=ry;return g}
+function initRenderer(){
+ if(!window.WebGL2RenderingContext||!document.createElement('canvas').getContext('webgl2'))throw new Error('WebGL2 is not available in this browser.');
+ renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,Q[S.quality].pr));renderer.setSize(innerWidth,innerHeight);
+ renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=CONFIG.exposure;
+ document.body.prepend(renderer.domElement);
+ renderer.debug.onShaderError=(gl,prog,vs,fs)=>{bootError('Shader compilation error.');console.error('Shader error',fs)};
+ renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();bootError('Graphics context lost — restoring…');$('boot').classList.remove('bootgone')});
+ renderer.domElement.addEventListener('webglcontextrestored',()=>{$('boot').classList.add('bootgone')});
+}
+const skyVert=`varying vec3 vDir;void main(){vDir=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+const skyFrag=`precision highp float;varying vec3 vDir;
+uniform float uTime,uSteps,uTanHalf,uCamAzimuth,uExposure;
+uniform vec2 uResolution;
+uniform vec3 uCamPos,uRight,uUp,uForward,uBlackHole,uPrimary,uSecondary,uHaze;
+float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+float noise2(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.-2.*f);return mix(mix(h(vec3(i,0.)),h(vec3(i.x+1.,i.y,0.)),u.x),mix(h(vec3(i.x,i.y+1.,0.)),h(vec3(i+1.,0.)),u.x),u.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*noise2(p);p*=2.03;a*=.5;}return v;}
+vec3 sky(vec3 d){float y=d.y;vec3 c=mix(uHaze*.18,uHaze*.8,smoothstep(-.3,.8,y));
+ vec3 sp=d*220.;float n=h(floor(sp));float star=smoothstep(.997,1.,n);float tw=.6+.4*sin(uTime*2.+n*80.);c+=vec3(.8,.85,1.)*star*tw*.8;
+ float m=smoothstep(.4,.95,fbm(d.xz*70.+d.y*40.));c+=uHaze*m*.05;return max(c,0.);}
+vec3 disk(vec3 p){float r=length(p.xz);if(r<30.5||r>110.)return vec3(0.);
+ float a=atan(p.z,p.x);float t=uTime;
+ float swirl=a+16.0*pow(max(r-29.0,0.001),-0.62)-t*0.5;
+ float f=fbm(vec2(swirl*2.4,r*.30))*0.55+fbm(vec2(swirl*5.3+4.7,r*.78))*0.30+fbm(vec2(swirl*11.0,r*1.55+9.1))*0.15;
+ float ribbon=smoothstep(.24,.86,f)*(.42+.58*sin(swirl*2.0+f*7.0));
+ float bright=smoothstep(30.5,42.,r)*(1.-smoothstep(55.,110.,r));
+ float inner=pow(38./max(r,31.),2.6);
+ float emit=ribbon*(.20+inner*2.1)*bright;emit*=.8+.2*sin(t*.6+r*.5);
+ vec3 col=mix(uPrimary,uSecondary,smoothstep(34.,70.,r));col=mix(col,vec3(1.,.95,.85),clamp(inner*.5,0.,1.));
+ float dop=.82+.28*cos(a-uCamAzimuth);
+ vec3 c=col*emit*dop;
+ c+=vec3(1.,.95,.86)*exp(-pow((r-31.2)*1.3,2.))*0.85;
+ return c;}
+void main(){
+ vec2 ndc=(gl_FragCoord.xy-.5*uResolution)/(.5*uResolution.y);
+ vec3 dir=normalize(uForward+uRight*ndc.x*uTanHalf+uUp*ndc.y*uTanHalf);
+ vec3 rel=uCamPos-uBlackHole;vec3 toBh=-rel;float distBh=length(toBh);toBh/=distBh;
+ float bd=dot(rel,toBh);float impact=sqrt(max(dot(rel,rel)-bd*bd,0.));
+ vec3 col=vec3(0.);float alpha=0.;float stepLen=clamp(distBh*.02,.5,8.0);
+ vec3 pos=uCamPos;bool captured=false;
+ for(int i=0;i<128;i++){if(float(i)>=uSteps)break;
+  vec3 toP=uBlackHole-pos;float r2=max(dot(toP,toP),1.0);vec3 pull=toP/sqrt(r2);
+  dir=normalize(dir+pull*(CONFIG_LENS/r2)*stepLen*3.0);
+  vec3 npos=pos+dir*stepLen;
+  float y0=pos.y-uBlackHole.y,y1=npos.y-uBlackHole.y;
+  if(y0*y1<0.){vec3 hp=mix(pos,npos,y0/(y0-y1));vec3 d=disk(hp-uBlackHole);float dd=dot(d,d);
+   if(dd>0.0004){col+=d*.95*(1.-alpha);alpha=min(1.,alpha+.65);if(alpha>.995)break;}}
+  pos=npos;float rr=length(pos-uBlackHole);
+  if(rr<30.5){captured=true;break;}
+  vec3 away=pos-uBlackHole;if(dot(away,dir)>0.&&length(away)>500.)break;
+  stepLen=min(stepLen*1.07,max(rr*.25,.35));}
+ if(!captured)col+=sky(normalize(dir))*(1.-alpha);
+ float ring=exp(-pow((impact-31.5)*.9,2.));col+=uSecondary*ring*.35*(1.-alpha);
+ col+=uPrimary*exp(-impact*.02)*.05;
+ col*=uExposure;gl_FragColor=vec4(max(col,0.),1.);}`
+ .replace('CONFIG_LENS',CONFIG.lens+'.0');
+const FinalShader={uniforms:{tDiffuse:{value:null},uTime:{value:0},uRes:{value:new THREE.Vector2(1,1)}},
+ vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+ fragmentShader:`varying vec2 vUv;uniform sampler2D tDiffuse;uniform float uTime;uniform vec2 uRes;
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ void main(){vec4 c=texture2D(tDiffuse,vUv);vec2 q=vUv-.5;float r=length(q*vec2(uRes.x/uRes.y,1.));
+  c.rgb*=1.-smoothstep(.55,1.3,r)*.40;
+  c.rgb+=(hash(vUv*uRes+fract(uTime)*173.1)-.5)*.016;
+  gl_FragColor=c;}`};
+function makeSky(){const m=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{uTime:{value:0},uResolution:{value:new THREE.Vector2(innerWidth,innerHeight)},uCamPos:{value:new THREE.Vector3()},uRight:{value:new THREE.Vector3()},uUp:{value:new THREE.Vector3()},uForward:{value:new THREE.Vector3()},uBlackHole:{value:CONFIG.blackHole},uPrimary:{value:new THREE.Color(1,.48,.13)},uSecondary:{value:new THREE.Color(1,.8,.45)},uHaze:{value:new THREE.Color(.23,.085,.025)},uSteps:{value:64},uTanHalf:{value:Math.tan(camera.fov*.5*Math.PI/180)},uCamAzimuth:{value:0},uExposure:{value:CONFIG.exposure}},vertexShader:skyVert,fragmentShader:skyFrag});const mesh=new THREE.Mesh(new THREE.SphereGeometry(900,48,24),m);mesh.frustumCulled=false;mesh.renderOrder=-10;return {mesh,m}}
+function ground(color){const geo=new THREE.PlaneGeometry(1000,1000,110,110);const pos=geo.attributes.position;for(let i=0;i<pos.count;i++){const x=pos.getX(i),y=pos.getY(i),d=Math.hypot(x,y);pos.setZ(i,(fbm(x*.009,y*.009)-.5)*5+Math.max(0,d-120)*.002)}geo.computeVertexNormals();const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:1}));m.rotation.x=-Math.PI/2;m.position.y=-.05;return m}
+function makeFarmhouse(){const g=new THREE.Group(),wall=0x3d2717,trim=0x1b1109;g.add(place(box(8,4.2,6,wall),0,2.1,0));
+ const shape=new THREE.Shape();shape.moveTo(-4.7,0);shape.lineTo(0,2.7);shape.lineTo(4.7,0);shape.closePath();
+ const roofGeo=new THREE.ExtrudeGeometry(shape,{depth:7,bevelEnabled:false});roofGeo.translate(0,0,-3.5);
+ const roof=new THREE.Mesh(roofGeo,new THREE.MeshStandardMaterial({color:0x24150c,roughness:.95}));roof.position.y=4.2;g.add(roof);
+ g.add(place(box(8.2,.25,2.2,trim),0,.28,4));[-3.4,3.4].forEach(x=>g.add(place(box(.22,3.2,.22,trim),x,1.85,4.6)));g.add(place(box(8.4,.18,.3,trim),0,3.4,4.55));
+ const winMat=new THREE.MeshStandardMaterial({color:0x552b05,emissive:0xffa83c,emissiveIntensity:2,roughness:.4});
+ [[-2.2,2.3],[2.2,2.3]].forEach(([wx,wy])=>{const w=new THREE.Mesh(new THREE.PlaneGeometry(1.1,1.3),winMat);w.position.set(wx,wy,3.02);g.add(w);g.add(place(box(1.4,.12,.1,trim),wx,wy+.75,3.05));g.add(place(box(1.4,.12,.1,trim),wx,wy-.75,3.05));g.add(place(box(.12,1.6,.1,trim),wx,wy,3.05));});
+ g.add(place(box(1.2,2.5,.12,0x180d06),0,1.3,3.04));g.add(place(box(.18,.7,.05,0xc9a354),.42,1.3,3.11));g.add(place(box(1.3,.16,1.4,trim),0,4.15,0));g.add(place(box(.65,2.1,.65,0x2a180e),2.4,6.2,-.5));return g}
+function makeTruck(){const g=new THREE.Group(),paint=0x171713,trim=0x0b0b09;g.add(place(box(4.6,.62,.5,trim),0,.84,2.05));g.add(place(box(4.6,.52,.5,trim),0,.78,-2.0));
+ g.add(place(box(1.8,1.05,1.85,paint),-.35,1.45,1.0));g.add(place(box(1.5,.9,1.65,paint),-.35,1.36,-.75));
+ const glass=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.62),new THREE.MeshStandardMaterial({color:0x10151a,roughness:.2,metalness:.4}));glass.position.set(-.35,1.63,.12);glass.rotation.y=Math.PI/2;g.add(glass);
+ g.add(place(box(2.7,.55,1.75,paint),.6,1.08,-1.25));
+ [-1.05,1.05].forEach(z=>[-.86,.86].forEach(x=>{const w=cyl(.48,.48,.25,0x090909,18);w.rotation.z=Math.PI/2;w.position.set(x*.72,.48,z);g.add(w)}));
+ [-1,1].forEach(x=>{const l=new THREE.Mesh(new THREE.CircleGeometry(.12,12),new THREE.MeshStandardMaterial({emissive:0xffd073,emissiveIntensity:1.4,color:0x332211}));l.position.set(x*.65,.97,2.31);g.add(l)});return g}
+function makeGrass(){const count=12000,geo=new THREE.ConeGeometry(.035,.7,4,1);geo.translate(0,.35,0);const im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({roughness:1}),count),m=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),c1=new THREE.Color(0x3a2810),c2=new THREE.Color(0x6b4a1e),cc=new THREE.Color();for(let i=0;i<count;i++){const a=hash(i)*6.28,r=Math.pow(hash(i+90),.55)*95,x=Math.cos(a)*r,z=Math.sin(a)*r-25,s=.4+hash(i+30)*1.3;e.set(0,hash(i+7)*6.28,0);q.setFromEuler(e);m.compose(new THREE.Vector3(x,0,z),q,v.set(s,s*(.7+hash(i+4)*.7),s));im.setMatrixAt(i,m);im.setColorAt(i,cc.copy(c1).lerp(c2,hash(i+13)))}return im}
+function makeFlowers(){const count=9000,petal=new THREE.ConeGeometry(.095,.26,5,1);petal.translate(0,.74,0);const stem=new THREE.CylinderGeometry(.011,.017,.8,4,1);stem.translate(0,.4,0);const stems=new THREE.InstancedMesh(stem,new THREE.MeshStandardMaterial({color:0x191125,roughness:1}),count);const petals=new THREE.InstancedMesh(petal,new THREE.MeshStandardMaterial({roughness:.7,emissive:0x3d2c72,emissiveIntensity:.42}),count);const m=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler(),v=new THREE.Vector3(),colors=[0x3a2a5e,0x5a4488,0x7a68b0,0x9a8cd0,0xbfb6e8].map(c=>new THREE.Color(c));for(let i=0;i<count;i++){const x=(hash(i)-.5)*150,z=-25+(hash(i+8)-.5)*135,r=Math.hypot(x,z+25);const s=(.85+hash(i+2)*2.1)*(r<25?1.35:.9);e.set((hash(i+5)-.5)*.12,hash(i+9)*6.28,(hash(i+11)-.5)*.12);q.setFromEuler(e);m.compose(new THREE.Vector3(x,0,z),q,v.set(s,s,s));stems.setMatrixAt(i,m);petals.setMatrixAt(i,m);petals.setColorAt(i,colors[Math.floor(hash(i+25)*5)])}return [stems,petals]}
+function makeAstronaut(){const g=new THREE.Group(),suit=0x111217,light=0x303137;g.add(place(sph(.48,light),0,2.28,0));const helmet=new THREE.Mesh(new THREE.SphereGeometry(.49,24,18,0,Math.PI*2,0,Math.PI*.6),new THREE.MeshStandardMaterial({color:0x111217,roughness:.42,metalness:.22}));helmet.position.y=2.28;g.add(helmet);g.add(place(cyl(.3,.34,.18,suit),0,1.94,0));
+ g.add(place(box(.16,.65,.08,suit),0,1.82,.45));g.add(place(box(.78,.9,2.2,suit),0,1.25,0));g.add(place(box(.82,.26,2.25,light),0,1.67,0));
+ [-1,1].forEach(x=>{g.add(place(sph(.26,suit),x*.45,1.67,0));g.add(place(cyl(.13,.14,.65,suit),x*.55,1.22,0));g.add(place(sph(.15,suit),x*.58,.79,0));g.add(place(cyl(.16,.17,.75,suit),x*.27,.88,0));g.add(place(box(.26,.5,.45,suit),x*.28,.40,0))});
+ g.add(place(box(.18,.42,.65,0x292a2f),0,1.32,-1.2));const red=new THREE.Mesh(new THREE.SphereGeometry(.045,10,8),new THREE.MeshStandardMaterial({color:0x300000,emissive:0xff1818,emissiveIntensity:3}));red.position.set(.12,1.72,-1.54);g.add(red);return g}
+function makeParticles(n,color){const p=new Float32Array(n*3);for(let i=0;i<n;i++){p[i*3]=(hash(i)-.5)*100;p[i*3+1]=hash(i+2)*8;p[i*3+2]=(hash(i+4)-.5)*100-25}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(p,3));const pts=new THREE.Points(g,new THREE.PointsMaterial({color,size:.1,transparent:true,opacity:.42,depthWrite:false,blending:THREE.AdditiveBlending}));return pts}
+function lights(p,viola){const g=new THREE.Group(),C=a=>new THREE.Color(a[0],a[1],a[2]),d=new THREE.DirectionalLight(C(p.plasma),2.6);d.position.set(-60,45,-100);g.add(d);g.add(new THREE.HemisphereLight(C(p.hi),C(p.ground),.45));const fill=new THREE.PointLight(C(p.plasma),55,130,2);fill.position.set(-25,18,-55);g.add(fill);if(viola){const rim=new THREE.DirectionalLight(C(p.hot),1.4);rim.position.set(0,25,-70);g.add(rim)}return g}
+function makeScene(name){const p=PALETTES[name],root=new THREE.Group();root.add(ground(new THREE.Color(p.ground[0],p.ground[1],p.ground[2])));root.add(lights(p,name==='viola'));const particles=makeParticles(550,name==='aurum'?0xb37638:0xb9a6d8);root.add(particles);root.userData.particles=particles;
+ if(name==='aurum'){const house=makeFarmhouse();place(house,22,0,-42,-.22);root.add(house);const truck=makeTruck();place(truck,14.5,0,-37,.18);root.add(truck);root.add(makeGrass())}
+ else{makeFlowers().forEach(x=>root.add(x));const astronaut=makeAstronaut();place(astronaut,0,0,-20);astronaut.scale.setScalar(1.6);astronaut.userData.base=1.6;root.add(astronaut);root.userData.astronaut=astronaut}
+ return root}
+function setup(){try{initRenderer()}catch(e){bootError(e.message);return}
+ scene=new THREE.Scene();scene.fog=new THREE.Fog(0x1a0b04,70,480);camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,1800);camera.target=new THREE.Vector3(0,7,0);clock=new THREE.Clock();
+ const sky=makeSky();scene.add(sky.mesh);skyMat=sky.m;aurum=makeScene('aurum');viola=makeScene('viola');scene.add(aurum,viola);current=S.active==='aurum'?aurum:viola;current.visible=true;(S.active==='aurum'?viola:aurum).visible=false;
+ $('sceneName').textContent=S.active==='aurum'?'Aurum':'Viola';$('sceneSub').textContent=S.active==='aurum'?'The last farm before the event horizon':'A violet field beneath the arc of the disk';
+ document.querySelectorAll('.scene').forEach(b=>b.classList.toggle('active',b.dataset.scene===S.active));
+ composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),Q[S.quality].bloom,.5,.8);composer.addPass(bloom);finalPass=new ShaderPass(FinalShader);composer.addPass(finalPass);composer.addPass(new OutputPass());
+ bindControls();updateAltUI();resize();requestAnimationFrame(update)}
+function setScene(name){if(name===S.active&&!S.prev)return;if(S.prev)return;const old=current;S.active=name;S.prev=old;S.swapped=false;S.t=0;S.progress=0;old.visible=true;current=name==='aurum'?aurum:viola;current.visible=false;
+ $('sceneName').textContent=name==='aurum'?'Aurum':'Viola';$('sceneSub').textContent=name==='aurum'?'The last farm before the event horizon':'A violet field beneath the arc of the disk';
+ document.querySelectorAll('.scene').forEach(b=>b.classList.toggle('active',b.dataset.scene===name));
+ const lim=name==='aurum'?[.5,9]:[1,7];S.targetAlt=clamp(S.targetAlt,lim[0],lim[1]);updateAltUI()}
+function paletteLerp(){const from=S.prev?(S.active==='aurum'?'viola':'aurum'):S.active,a=PALETTES[from],b=PALETTES[S.active],p=S.prev?S.progress:1,e=p<.5?0:(p-.5)*2;
+ return {atmo:new THREE.Color(a.atmo[0],a.atmo[1],a.atmo[2]).lerp(new THREE.Color(b.atmo[0],b.atmo[1],b.atmo[2]),e),plasma:new THREE.Color(a.plasma[0],a.plasma[1],a.plasma[2]).lerp(new THREE.Color(b.plasma[0],b.plasma[1],b.plasma[2]),e),hi:new THREE.Color(a.hi[0],a.hi[1],a.hi[2]).lerp(new THREE.Color(b.hi[0],b.hi[1],b.hi[2]),e),fog:new THREE.Color(a.fog[0],a.fog[1],a.fog[2]).lerp(new THREE.Color(b.fog[0],b.fog[1],b.fog[2]),e)}}
+function setQuality(q){S.quality=q;renderer.setPixelRatio(Math.min(devicePixelRatio,Q[q].pr));bloom.strength=Q[q].bloom;skyMat.uniforms.uSteps.value=Q[q].steps;resize()}
+function updateCamera(){const base=S.active==='aurum'?{r:34,ty:7}:{r:26,ty:6};
+ const idle=performance.now()/1000-S.lastInput,ds=S.auto?clamp((idle-2)/3,0,1):0,
+ drift=Math.sin(S.visual*.07)*.05*ds,driftP=Math.sin(S.visual*.045)*.012*ds;
+ const yaw=S.yaw+drift+S.parX*.025,pitch=clamp(S.pitch+driftP+S.parY*.012,-.12,.48),r=base.r*S.zoom,y=S.alt+2.8;
+ camera.position.set(Math.sin(yaw)*r,y,Math.cos(yaw)*r);camera.target.set(0,base.ty+S.alt*.18,0);camera.lookAt(camera.target);camera.updateMatrixWorld();
+ const v=new THREE.Vector3().subVectors(camera.target,camera.position).normalize(),rt=new THREE.Vector3().crossVectors(v,camera.up).normalize(),u=new THREE.Vector3().crossVectors(rt,v).normalize();
+ const u2=skyMat.uniforms;u2.uRight.value.copy(rt);u2.uUp.value.copy(u);u2.uForward.value.copy(v);u2.uCamPos.value.copy(camera.position);u2.uCamAzimuth.value=Math.atan2(camera.position.x-CONFIG.blackHole.x,camera.position.z-CONFIG.blackHole.z)}
+function update(){const dt=Math.min(clock.getDelta(),.05);if(!S.pause)S.visual+=dt;
+ S.yaw=lerp(S.yaw,S.tYaw,.09);S.pitch=lerp(S.pitch,S.tPitch,.09);S.zoom=lerp(S.zoom,S.targetZoom,.1);const na=lerp(S.alt,S.targetAlt,.13);if(Math.abs(na-S.alt)>.0004){S.alt=na;updateAltUI()}
+ if(S.prev){S.t+=dt;const p=clamp(S.t/CONFIG.transition,0,1);S.progress=p;renderer.toneMappingExposure=CONFIG.exposure*(1-Math.sin(p*Math.PI)*.78);
+  if(p>=.5&&!S.swapped){S.swapped=true;S.prev.visible=false;current.visible=true}
+  if(p>=1){S.prev=null;S.progress=1;renderer.toneMappingExposure=CONFIG.exposure}}
+ const pal=paletteLerp(),u=skyMat.uniforms;u.uTime.value=S.visual;u.uExposure.value=CONFIG.exposure;u.uPrimary.value.copy(pal.plasma);u.uSecondary.value.copy(pal.hi);u.uHaze.value.copy(pal.atmo);u.uSteps.value=Q[S.quality].steps;u.uTanHalf.value=Math.tan(camera.fov*.5*Math.PI/180);
+ scene.fog.color.copy(pal.fog);finalPass.uniforms.uTime.value=S.visual;
+ if(current.userData.particles){current.userData.particles.rotation.y=S.visual*.012;current.userData.particles.position.y=Math.sin(S.visual*.2)*.2}
+ if(current===viola&&current.userData.astronaut){const b=current.userData.astronaut.userData.base||1;current.userData.astronaut.scale.y=b*(1+Math.sin(S.visual*.8)*.006)}
+ updateCamera();composer.render();
+ if(!S.booted){S.booted=true;$('boot').classList.add('bootgone')}
+ S.fps=lerp(S.fps,1/Math.max(dt,1e-4),.04);S.qTimer+=dt;
+ if(S.qTimer>4){S.qTimer=0;const order=['low','med','high'],idx=order.indexOf(S.quality);if(S.fps<42&&idx>0)setQuality(order[idx-1]);else if(S.fps>57&&idx<2)setQuality(order[idx+1])}
+ if(!S.shot)requestAnimationFrame(update)}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);skyMat.uniforms.uResolution.value.set(innerWidth,innerHeight);finalPass.uniforms.uRes.value.set(innerWidth,innerHeight)}
+function bindControls(){addEventListener('resize',resize);
+ const el=renderer.domElement;let px=0,py=0,pinch=0;
+ el.addEventListener('pointerdown',e=>{dragging=true;S.lastInput=performance.now()/1000;px=e.clientX;py=e.clientY;el.setPointerCapture(e.pointerId)});
+ el.addEventListener('pointermove',e=>{S.parX=(e.clientX/innerWidth-.5)*2;S.parY=(e.clientY/innerHeight-.5)*2;if(!dragging)return;S.lastInput=performance.now()/1000;S.tYaw+=(e.clientX-px)*.003;S.tPitch=clamp(S.tPitch+(e.clientY-py)*.002,-.12,.48);px=e.clientX;py=e.clientY});
+ el.addEventListener('pointerup',()=>dragging=false);el.addEventListener('pointercancel',()=>dragging=false);
+ el.addEventListener('wheel',e=>{e.preventDefault();S.lastInput=performance.now()/1000;S.targetZoom=clamp(S.targetZoom+e.deltaY*.0007,.55,1.8)},{passive:false});
+ el.addEventListener('dblclick',()=>resetCamera());
+ el.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinch)S.targetZoom=clamp(S.targetZoom*(pinch/d),.55,1.8);pinch=d;e.preventDefault()}},{passive:false});
+ const rail=$('rail'),lim=()=>S.active==='aurum'?[.5,9]:[1,7];
+ function railSet(e){const r=rail.getBoundingClientRect(),v=clamp((e.clientY-r.top)/r.height,0,1),l=lim();S.targetAlt=lerp(l[1],l[0],v);updateAltUI()}
+ rail.addEventListener('pointerdown',e=>{rail.setPointerCapture(e.pointerId);railSet(e);const mv=ev=>railSet(ev);rail.addEventListener('pointermove',mv);rail.addEventListener('pointerup',()=>rail.removeEventListener('pointermove',mv),{once:true})});
+ rail.addEventListener('keydown',e=>{const l=lim();if(e.key==='ArrowUp')S.targetAlt=clamp(S.targetAlt+.5,l[0],l[1]);if(e.key==='ArrowDown')S.targetAlt=clamp(S.targetAlt-.5,l[0],l[1]);updateAltUI()});
+ document.querySelectorAll('.scene').forEach(b=>b.onclick=()=>setScene(b.dataset.scene));
+ $('autoBtn').onclick=e=>{S.auto=!S.auto;e.currentTarget.classList.toggle('on',S.auto)};
+ $('pauseBtn').onclick=e=>{S.pause=!S.pause;e.currentTarget.classList.toggle('on',S.pause)};
+ $('uiBtn').onclick=()=>document.body.classList.add('hidden-ui');
+ $('restore').onclick=()=>document.body.classList.remove('hidden-ui');
+ $('fullBtn').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else document.documentElement.requestFullscreen().catch(()=>bootError('Fullscreen unavailable'))};
+ function resetCamera(){S.tYaw=0;S.tPitch=S.active==='aurum'?.09:.15;S.targetZoom=1}
+ addEventListener('keydown',e=>{if(e.target&&e.target.matches&&e.target.matches('input'))return;const k=e.key.toLowerCase();if(k==='1')setScene('aurum');else if(k==='2')setScene('viola');else if(k==='f')$('fullBtn').click();else if(k==='h')$('uiBtn').click();else if(k==='r')resetCamera();else if(k==='p')$('pauseBtn').click();else if(k==='m')$('muteBtn').click()});
+ const audio=new Audio();audio.loop=true;audio.volume=.35;let url=null;
+ const showAudio=m=>$('trackName').textContent=m;
+ $('uploadBtn').onclick=()=>$('fileInput').click();
+ $('fileInput').onchange=e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;if(!f.type.startsWith('audio/')){showAudio('UNSUPPORTED FILE');return}if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);audio.src=url;audio.loop=$('loopBtn').classList.contains('on');showAudio(f.name);audio.play().catch(()=>showAudio('PRESS PLAY'))};
+ $('playBtn').onclick=()=>{if(!audio.src)return;audio.paused?audio.play().catch(()=>{}):audio.pause()};
+ $('muteBtn').onclick=e=>{audio.muted=!audio.muted;e.currentTarget.classList.toggle('on',audio.muted);e.currentTarget.textContent=audio.muted?'UNMUTE':'MUTE'};
+ $('volume').oninput=e=>{audio.volume=e.target.value/100;if(audio.muted&&audio.volume>0){audio.muted=false;$('muteBtn').textContent='MUTE';$('muteBtn').classList.remove('on')}};
+ $('loopBtn').onclick=e=>{audio.loop=!audio.loop;e.currentTarget.classList.toggle('on',audio.loop)};
+ audio.addEventListener('error',()=>showAudio('DECODE ERROR'));
+ audio.addEventListener('play',()=>$('playBtn').textContent='❚❚');audio.addEventListener('pause',()=>$('playBtn').textContent='▶');
+ setInterval(()=>{const h=Math.floor(S.visual/3600),m=Math.floor(S.visual/60)%60,s=Math.floor(S.visual)%60;$('timeValue').textContent=[h,m,s].map(x=>String(x).padStart(2,'0')).join(':');$('fpsValue').textContent=Math.round(S.fps);
+  const rel=CONFIG.blackHole.clone().sub(camera.position);$('horValue').textContent=(Math.atan2(rel.y,Math.hypot(rel.x,rel.z))*180/Math.PI).toFixed(1)+'°'},500)}
+function updateAltUI(){const l=S.active==='aurum'?[.5,9]:[1,7],a=clamp(S.targetAlt,l[0],l[1]);$('altReadout').textContent=a.toFixed(1);$('altValue').textContent=a.toFixed(1);$('handle').style.bottom=((a-l[0])/(l[1]-l[0])*100)+'%';$('rail').setAttribute('aria-valuemin',l[0]);$('rail').setAttribute('aria-valuemax',l[1]);$('rail').setAttribute('aria-valuenow',a.toFixed(1))}
+setup();</script></body></html>
